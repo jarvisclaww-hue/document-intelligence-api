@@ -1,0 +1,41 @@
+{
+  "name": "document-intelligence-api",
+  "service": {
+    "name": "document-intelligence-api",
+    "source": {
+      "image": "document-intelligence-api:latest"
+    }
+  },
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm install && npm run build"
+  },
+  "startCommand": "npm start",
+  "healthcheck": {
+    "path": "/health",
+    "interval": 30,
+    "timeout": 5,
+    "startPeriod": 10
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  },
+  "deploy": {
+    "strategy": "rolling",
+    "maxConcurrency": 1
+  },
+  "resources": {
+    "cpu": 0.25,
+    "memory": 512
+  },
+  "plugins": [
+    {
+      "name": "postgresql",
+      "source": {
+        "type": "postgresql",
+        "version": "15"
+      }
+    }
+  ]
+}
