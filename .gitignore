@@ -126,4 +126,5 @@ dump.rdb
 
 # Temporary files
 tmp/
-temp/
+temp/dist/
+node_modules/
