@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { db } from '../../services/database';
-import { queueService } from '../../services/queue';
 import { storageService } from '../../services/storage';
+import { processDocument } from '../../services/processor';
 import { ValidationError, NotFoundError } from '../../middleware/error-handler';
 import { logger } from '../../utils/logger';
 
@@ -137,12 +137,9 @@ export const documentController = {
         },
       });
 
-      // Queue processing job
-      await queueService.addDocumentProcessingJob({
-        documentId: document.id,
-        storageKey,
-        userId: user.id,
-        processingOptions: body.processing_options,
+      // Process document inline (fire-and-forget — don't await)
+      processDocument(document.id, storageKey, body.processing_options).catch(err => {
+        logger.error('Background processing failed', { documentId: document.id, error: (err as Error).message });
       });
 
       // Log the upload
@@ -539,38 +536,24 @@ export const documentController = {
     try {
       const { user } = req as any;
 
-      const stats = await db.document.aggregate({
-        where: {
-          tenantId: user.tenantId || 'default',
-          userId: user.id,
-        },
-        _count: {
-          id: true,
-        },
-        _sum: {
-          fileSizeBytes: true,
-        },
-        _avg: {
-          progress: true,
-        },
-        _groupBy: {
-          status: true,
-        },
-      });
+      const where = {
+        tenantId: user.tenantId || 'default',
+        userId: user.id,
+      };
 
-      // Format response
-      const statusCounts: Record<string, number> = {};
-      if (Array.isArray(stats)) {
-        stats.forEach((stat: any) => {
-          statusCounts[stat.status.toLowerCase()] = stat._count.id;
-        });
-      }
+      const [totals, count] = await Promise.all([
+        db.document.aggregate({
+          where,
+          _sum: { fileSizeBytes: true },
+          _avg: { progress: true },
+        }),
+        db.document.count({ where }),
+      ]);
 
       res.json({
-        total_documents: (stats as any)._count?.id || 0,
-        total_size_bytes: (stats as any)._sum?.fileSizeBytes || 0,
-        average_progress: (stats as any)._avg?.progress || 0,
-        status_counts: statusCounts,
+        total_documents: count,
+        total_size_bytes: (totals as any)._sum?.fileSizeBytes || 0,
+        average_progress: (totals as any)._avg?.progress || 0,
         user_id: user.id,
         tenant_id: user.tenantId,
       });
