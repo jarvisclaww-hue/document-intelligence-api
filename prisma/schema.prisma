@@ -63,7 +63,7 @@ model User {
   metadata          Json          @default("{}")
   
   // Relations
-  tenants           Tenant[]      @relation("UserTenants")
+  userTenants      UserTenant[]
   documents         Document[]
   apiKeys           ApiKey[]
   auditLogs         AuditLog[]
@@ -87,7 +87,7 @@ model Tenant {
   billingInfo Json?
   
   // Relations
-  users       User[]   @relation("UserTenants")
+  userTenants UserTenant[]
   documents   Document[]
   webhooks    Webhook[]
   auditLogs   AuditLog[]
@@ -148,6 +148,7 @@ model ProcessingJob {
   priority    Int       @default(0)
   attempts    Int       @default(0)
   maxAttempts Int       @default(3)
+  scheduledAt  DateTime?
   errorMessage String?
   inputData   Json?
   outputData  Json?
@@ -175,6 +176,7 @@ model ApiKey {
   rateLimitPerDay Int      @default(10000)
   lastUsedAt      DateTime?
   expiresAt       DateTime?
+  revokedAt       DateTime?
   createdAt       DateTime @default(now())
   
   // Relations

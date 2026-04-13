@@ -284,8 +284,8 @@ export const authController = {
           metadata: userData.metadata,
         },
         stats: {
-          total_documents: documentStats._count.id || 0,
-          total_size_bytes: documentStats._sum.fileSizeBytes || 0,
+          total_documents: ((documentStats as any)?._count || {}).id || 0,
+          total_size_bytes: ((documentStats as any)?._sum || {}).fileSizeBytes || 0,
         },
       });
     } catch (error) {

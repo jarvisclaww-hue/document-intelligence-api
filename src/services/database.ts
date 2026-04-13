@@ -76,7 +76,7 @@ export const db = {
     },
 
     async findByApiKey(apiKey: string) {
-      return await prisma.user.findUnique({ where: { apiKey } });
+      return await prisma.user.findUnique({ where: { slug: apiKey } });
     },
 
     async create(data: { email: string; hashedPassword?: string; role?: string; metadata?: any }) {
@@ -109,14 +109,15 @@ export const db = {
     },
 
     async findByApiKey(apiKey: string) {
-      return await prisma.tenant.findUnique({ where: { apiKey } });
+      return await prisma.tenant.findUnique({ where: { slug: apiKey } });
     },
 
     async create(data: { name: string; metadata?: any }) {
       return await prisma.tenant.create({
         data: {
           name: data.name,
-          metadata: data.metadata || {},
+          slug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          settings: data.metadata || {},
         },
       });
     },
@@ -125,7 +126,7 @@ export const db = {
   // API key operations
   apiKey: {
     async findByKey(key: string) {
-      return await prisma.apiKey.findUnique({ where: { key } });
+      return await prisma.apiKey.findUnique({ where: { keyHash: key } });
     },
 
     async create(data: {
@@ -139,7 +140,8 @@ export const db = {
         data: {
           userId: data.userId,
           name: data.name,
-          key: data.key,
+          keyHash: data.key,
+          prefix: data.key.substring(0, 8),
           scopes: data.scopes,
           expiresAt: data.expiresAt,
         },
@@ -229,7 +231,7 @@ export const db = {
       return await prisma.document.update({
         where: { id },
         data: {
-          processedText: text,
+          extractedText: text,
           summary,
           entities,
           categories,
@@ -312,10 +314,9 @@ export const db = {
       return await prisma.processingJob.findMany({
         where: {
           status: 'PENDING',
-          scheduledAt: { lte: new Date() },
+          status: { in: ["PENDING", "RETRYING"] },
         },
         take: limit,
-        orderBy: [{ priority: 'desc' }, { scheduledAt: 'asc' }],
       });
     },
   },
@@ -324,7 +325,7 @@ export const db = {
   webhook: {
     async findByTenant(tenantId: string) {
       return await prisma.webhook.findMany({
-        where: { tenantId, enabled: true },
+        where: { tenantId, status: 'active' },
       });
     },
 
