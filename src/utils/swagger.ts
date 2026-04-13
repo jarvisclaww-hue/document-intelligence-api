@@ -58,7 +58,7 @@ For support, contact: support@document-intelligence.com
         description: 'Development server',
       },
       {
-        url: 'https://api.document-intelligence.com/v1',
+        url: 'https://document-intelligence-api-production.up.railway.app/api/v1',
         description: 'Production server',
       },
     ],

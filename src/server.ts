@@ -65,7 +65,7 @@ export async function createServer(): Promise<Application> {
   app.use('/api/v1', apiRouter);
 
   // Swagger documentation
-  if (process.env.NODE_ENV !== 'production') {
+  if (true) { // Swagger enabled for all environments
     swaggerDocs(app, Number(process.env.PORT) || 3000);
   }
 
