@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Plan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum DocumentStatus {
+  UPLOADED
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum JobType {
+  OCR
+  AI_ANALYSIS
+  QUALITY_CHECK
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+// Models
+model User {
+  id                String        @id @default(uuid())
+  email             String        @unique
+  hashedPassword    String?
+  apiKey            String?       @unique
+  role              Role          @default(USER)
+  status            UserStatus    @default(ACTIVE)
+  metadata          Json          @default("{}")
+  
+  // Relations
+  tenants           Tenant[]      @relation("UserTenants")
+  documents         Document[]
+  apiKeys           ApiKey[]
+  auditLogs         AuditLog[]
+  
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  lastLoginAt       DateTime?
+  
+  @@index([email])
+  @@index([apiKey])
+  @@index([createdAt])
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  plan        Plan     @default(FREE)
+  settings    Json     @default("{}")
+  billingInfo Json?
+  
+  // Relations
+  users       User[]   @relation("UserTenants")
+  documents   Document[]
+  webhooks    Webhook[]
+  auditLogs   AuditLog[]
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([slug])
+}
+
+model Document {
+  id                     String         @id @default(uuid())
+  tenantId               String
+  userId                 String
+  
+  // File information
+  originalFilename       String
+  fileSizeBytes          Int
+  fileType               String
+  storageKey             String         @unique
+  storageBucket          String         @default("documents")
+  
+  // Processing status
+  status                 DocumentStatus @default(UPLOADED)
+  progress               Int            @default(0)
+  errorMessage           String?
+  
+  // Processing results
+  extractedText          String?
+  entities               Json           @default("[]")
+  summary                String?
+  metadata               Json           @default("{}")
+  processingStats        Json           @default("{}")
+  
+  // Relations
+  tenant                 Tenant         @relation(fields: [tenantId], references: [id])
+  user                   User           @relation(fields: [userId], references: [id])
+  processingJobs         ProcessingJob[]
+  
+  // Timestamps
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  processingStartedAt    DateTime?
+  processingCompletedAt  DateTime?
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ProcessingJob {
+  id          String    @id @default(uuid())
+  documentId  String
+  jobType     JobType
+  status      JobStatus @default(PENDING)
+  priority    Int       @default(0)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  errorMessage String?
+  inputData   Json?
+  outputData  Json?
+  
+  // Relations
+  document    Document  @relation(fields: [documentId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  
+  @@index([documentId])
+  @@index([status])
+  @@index([priority, status])
+}
+
+model ApiKey {
+  id              String   @id @default(uuid())
+  userId          String
+  name            String
+  keyHash         String   @unique
+  prefix          String
+  scopes          Json     @default("[\"documents:read\", \"documents:write\"]")
+  rateLimitPerDay Int      @default(10000)
+  lastUsedAt      DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([prefix])
+}
+
+model Webhook {
+  id               String   @id @default(uuid())
+  tenantId         String
+  url              String
+  eventTypes       Json     @default("[\"document.completed\", \"document.failed\"]")
+  secretToken      String?
+  status           String   @default("active")
+  lastTriggeredAt  DateTime?
+  failureCount     Int      @default(0)
+  
+  // Relations
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  
+  // Timestamps
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([tenantId])
+}
+
+model AuditLog {
+  id           BigInt   @id @default(autoincrement())
+  tenantId     String?
+  userId       String?
+  action       String
+  resourceType String?
+  resourceId   String?
+  details      Json     @default("{}")
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  
+  // Relations
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id])
+  user         User?    @relation(fields: [userId], references: [id])
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+// Many-to-many relationship between User and Tenant
+model UserTenant {
+  id        String   @id @default(uuid())
+  userId    String
+  tenantId  String
+  role      Role     @default(USER)
+  
+  user      User     @relation(fields: [userId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+}
