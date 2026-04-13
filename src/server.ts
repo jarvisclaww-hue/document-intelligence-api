@@ -41,32 +41,8 @@ export async function createServer(): Promise<Application> {
   // Compression
   app.use(compression());
 
-  // Request logging
-  app.use(
-    pinoHttp({
-      logger: logger as any,
-      customLogLevel: (_req, res, err) => {
-        if (res.statusCode >= 400 && res.statusCode < 500) {
-          return 'warn';
-        } else if (res.statusCode >= 500 || err) {
-          return 'error';
-        }
-        return 'info';
-      },
-      serializers: {
-        req: req => ({
-          id: req.id,
-          method: req.method,
-          url: req.url,
-          query: req.query,
-          params: req.params,
-        }),
-        res: res => ({
-          statusCode: res.statusCode,
-        }),
-      },
-    })
-  );
+  // Request logging (simplified for compatibility)
+  app.use(pinoHttp({ quietReqLogger: true }));
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));
