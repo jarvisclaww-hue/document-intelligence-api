@@ -26,14 +26,14 @@ class QueueService {
   async addDocumentProcessingJob(data: DocumentProcessingJobData) {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     this.jobs.set(jobId, { id: jobId, data, status: 'queued', createdAt: new Date() });
-    logger.info({ jobId, documentId: data.documentId }, 'Document processing job queued (in-memory)');
+    logger.info('Document processing job queued (in-memory): ' + data.documentId);
     return { id: jobId };
   }
 
   async addAIAnalysisJob(data: AIAnalysisJobData) {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     this.jobs.set(jobId, { id: jobId, data, status: 'queued', createdAt: new Date() });
-    logger.info({ jobId, documentId: data.documentId }, 'AI analysis job queued (in-memory)');
+    logger.info('AI analysis job queued (in-memory): ' + data.documentId);
     return { id: jobId };
   }
 

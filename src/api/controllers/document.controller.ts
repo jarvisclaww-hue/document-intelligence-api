@@ -524,11 +524,11 @@ export const documentController = {
 
       // Set headers for download
       res.setHeader('Content-Type', document.fileType);
-      res.setHeader('Content-Length', file.ContentLength || document.fileSizeBytes);
+      res.setHeader('Content-Length', file.length || document.fileSizeBytes);
       res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
 
       // Send file
-      res.send(file.Body);
+      res.send(file);
     } catch (error) {
       next(error);
     }

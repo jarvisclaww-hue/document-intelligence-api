@@ -60,13 +60,13 @@ class ProcessingWorker {
 
         // Get file from storage
         const file = await storageService.getFile(storageKey);
-        if (!file || !file.Body) {
-          throw new Error(`File not found: ${storageKey}`);
+        if (!file) {
+          throw new Error('File not found: ' + storageKey);
         }
 
         // Detect file type and process
-        const buffer = Buffer.from(file.Body as string | Buffer);
-        const fileType = this.detectFileType(storageKey, file.ContentType);
+        const buffer = file;
+        const fileType = this.detectFileType(storageKey, undefined);
 
         let extractedText = '';
         const processingStats: any = {};

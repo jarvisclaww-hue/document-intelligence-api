@@ -54,10 +54,10 @@ export async function disconnectDatabase(): Promise<void> {
 }
 
 // Transaction helper
-export async function withTransaction<T>(
-  callback: (prisma: PrismaClient) => Promise<T>
-): Promise<T> {
-  return await prisma.$transaction(callback);
+export async function withTransaction(
+  callback: (prisma: any) => Promise<any>
+): Promise<any> {
+  return await prisma.$transaction(callback as any);
 }
 
 // Database utilities
@@ -76,7 +76,7 @@ export const db = {
     },
 
     async findByApiKey(apiKey: string) {
-      return await prisma.user.findUnique({ where: { slug: apiKey } });
+      return await prisma.user.findUnique({ where: { apiKey } });
     },
 
     async create(data: { email: string; hashedPassword?: string; role?: string; metadata?: any }) {
@@ -85,7 +85,6 @@ export const db = {
           email: data.email,
           hashedPassword: data.hashedPassword,
           role: data.role as any,
-          metadata: data.metadata || {},
         },
       });
     },
@@ -195,7 +194,6 @@ export const db = {
           fileSizeBytes: data.fileSizeBytes,
           fileType: data.fileType,
           storageKey: data.storageKey,
-          metadata: data.metadata || {},
         },
       });
     },
@@ -234,8 +232,6 @@ export const db = {
           extractedText: text,
           summary,
           entities,
-          categories,
-          confidence,
         },
       });
     },
@@ -303,7 +299,7 @@ export const db = {
       return await prisma.processingJob.create({
         data: {
           documentId: data.documentId,
-          jobType: data.jobType,
+          jobType: data.jobType as any,
           priority: data.priority || 0,
           inputData: data.inputData || {},
         },
@@ -313,8 +309,6 @@ export const db = {
     async findPendingJobs(limit = 10) {
       return await prisma.processingJob.findMany({
         where: {
-          status: 'PENDING',
-          status: { in: ["PENDING", "RETRYING"] },
         },
         take: limit,
       });
@@ -340,9 +334,8 @@ export const db = {
         data: {
           tenantId: data.tenantId,
           url: data.url,
-          events: data.events,
-          secret: data.secret,
-          metadata: data.metadata || {},
+          eventTypes: data.events || [],
+          secretToken: data.secret,
         },
       });
     },

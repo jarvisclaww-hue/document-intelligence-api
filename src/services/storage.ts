@@ -30,7 +30,7 @@ class StorageService {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, options.buffer);
-    logger.info({ key: options.key }, 'File uploaded to local storage');
+    logger.info('File uploaded to local storage: ' + options.key);
     return { key: options.key, url: `/storage/${options.key}` };
   }
 
