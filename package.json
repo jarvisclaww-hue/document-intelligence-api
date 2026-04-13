@@ -4,7 +4,7 @@
   "description": "Document Intelligence API Service - Process documents with OCR and AI analysis",
   "main": "dist/index.js",
   "scripts": {
-    "build": "prisma generate && tsc",
+    "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "dev:worker": "tsx watch src/workers/processing-worker.ts",
@@ -17,7 +17,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate"
   },
   "keywords": [
     "document-processing",
