@@ -16,7 +16,12 @@ const upload = multer({
 router.post('/auth/token', authController.getToken);
 router.post('/auth/refresh', authController.refreshToken);
 router.post('/auth/register', authController.register);
-router.post('/auth/api-keys', authenticate(), authController.createApiKey);
+router.post("/auth/api-keys", authenticate(), authController.createApiKey);
+router.get("/auth/api-keys", authenticate(), authController.listApiKeys);
+router.delete("/auth/api-keys/:id", authenticate(), authController.revokeApiKey);
+router.get("/auth/profile", authenticate(), authController.getProfile);
+router.put("/auth/profile", authenticate(), authController.updateProfile);
+router.post("/auth/change-password", authenticate(), authController.changePassword);
 
 // Document routes
 router.post(

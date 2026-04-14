@@ -124,8 +124,16 @@ export const db = {
 
   // API key operations
   apiKey: {
-    async findByKey(key: string) {
-      return await prisma.apiKey.findUnique({ where: { keyHash: key } });
+    async findByKeyHash(keyHash: string) {
+      return await prisma.apiKey.findFirst({ where: { keyHash, revokedAt: null } });
+    },
+
+    async findById(id: string) {
+      return await prisma.apiKey.findUnique({ where: { id } });
+    },
+
+    async findMany(options: any) {
+      return await prisma.apiKey.findMany(options);
     },
 
     async create(data: {

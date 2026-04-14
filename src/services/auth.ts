@@ -45,29 +45,39 @@ export function generateApiKey(
 // Verify API key
 export async function verifyApiKey(apiKey: string): Promise<ApiKeyInfo | null> {
   try {
-    const [prefix, rest] = apiKey.split('.');
+    const [prefix, rest] = apiKey.split(".");
     if (!prefix || !rest) {
       return null;
     }
 
     const rawKey = prefix + rest;
-    const keyHash = crypto.createHmac('sha256', API_KEY_SALT).update(rawKey).digest('hex');
+    const keyHash = crypto.createHmac("sha256", API_KEY_SALT).update(rawKey).digest("hex");
 
-    // In a real implementation, you would look up the API key in the database
-    // For now, we'll use a simple mock
-    const apiKeyRecord = await db.user.findByApiKey(keyHash);
-    if (!apiKeyRecord) {
-      return null;
+    // Look up by keyHash in ApiKey table
+    const apiKeyRecord = await db.apiKey.findByKeyHash(keyHash);
+    if (apiKeyRecord) {
+      return {
+        userId: (apiKeyRecord as any).userId,
+        name: (apiKeyRecord as any).name,
+        scopes: (apiKeyRecord as any).scopes as string[] || ["documents:read", "documents:write"],
+        rateLimitPerDay: (apiKeyRecord as any).rateLimitPerDay || 10000,
+      };
     }
 
-    return {
-      userId: apiKeyRecord.id,
-      name: 'Default API Key', // In real implementation, get from database
-      scopes: ['documents:read', 'documents:write'],
-      rateLimitPerDay: 10000,
-    };
+    // Fallback: check User.apiKey field (for keys set during registration)
+    const userRecord = await db.user.findByApiKey(keyHash);
+    if (userRecord) {
+      return {
+        userId: userRecord.id,
+        name: "Default API Key",
+        scopes: ["documents:read", "documents:write"],
+        rateLimitPerDay: 10000,
+      };
+    }
+
+    return null;
   } catch (error) {
-    logger.error('Error verifying API key:', error);
+    logger.error("Error verifying API key:", error);
     return null;
   }
 }

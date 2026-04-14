@@ -31,7 +31,7 @@ export async function createServer(): Promise<Application> {
   // CORS configuration
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN || '*',
+      origin: process.env.CORS_ORIGIN || ['https://ai-content-optimizer-pi.vercel.app', 'http://localhost:3000'],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
